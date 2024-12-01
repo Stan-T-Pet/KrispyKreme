@@ -1,18 +1,18 @@
-import { connectToDatabase } from "../../../utils/mongodb";
+import { connectToDatabase } from "@/utils/mongoDb"; // Assumes a utility function to connect to MongoDB
 
 export default async function handler(req, res) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ message: "Method not allowed" });
-  }
+  if (req.method === "GET") {
+    try {
+      const { db } = await connectToDatabase();
+      const orders = await db.collection("orders").find().toArray();
 
-  try {
-    const { db } = await connectToDatabase();
-
-    // Fetch all orders from the "orders" collection
-    const orders = await db.collection("orders").find({}).toArray();
-
-    return res.status(200).json(orders);
-  } catch (error) {
-    return res.status(500).json({ message: "Error fetching orders", error });
+      res.status(200).json(orders);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      res.status(500).json({ message: "Failed to fetch orders." });
+    }
+  } else {
+    res.setHeader("Allow", ["GET"]);
+    res.status(405).json({ message: `Method ${req.method} not allowed` });
   }
 }
