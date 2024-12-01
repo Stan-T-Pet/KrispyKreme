@@ -1,36 +1,44 @@
+import { MongoClient } from "mongodb";
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ message: "Method not allowed" });
   }
 
-  const { name, email, password, role } = req.body;
+  const { email, pass, confirmEmail, confirmPass } = req.body;
 
-  // Validate input
-  if (!name || !email || !password || !role) {
-    return res.status(400).json({ message: "Missing required fields" });
+  if (!email || !pass || !confirmEmail || !confirmPass) {
+    return res.status(400).json({ message: "All fields are required" });
   }
 
-  try {
-    const { db } = await connectToDatabase();
-
-    // Check if user already exists
-    const existingUser = await db.collection("users").findOne({ email });
-    if (existingUser) {
-      return res.status(409).json({ message: "User already exists" });
-    }
-
-    // Insert the plain text password (NOT RECOMMENDED for production)
-    await db.collection("users").insertOne({
-      name,
-      email,
-      password, // Store the plain text password temporarily
-      role,
-      createdAt: new Date().toISOString(),
-    });
-
-    return res.status(201).json({ message: "User registered successfully" });
-  } catch (error) {
-    console.error("Registration error:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+  if (email !== confirmEmail) {
+    return res.status(400).json({ message: "Emails do not match" });
   }
+
+  if (pass !== confirmPass) {
+    return res.status(400).json({ message: "Passwords do not match" });
+  }
+
+  const client = new MongoClient("mongodb://localhost:27017");
+  await client.connect();
+
+  const db = client.db("myDatabase");
+  const collection = db.collection("users");
+
+  const existingUser = await collection.findOne({ email });
+  if (existingUser) {
+    await client.close();
+    return res.status(409).json({ message: "User already exists" });
+  }
+
+  const user = {
+    email,
+    password: pass,
+    createdAt: new Date(),
+  };
+
+  await collection.insertOne(user);
+  await client.close();
+
+  return res.status(201).json({ message: "User registered successfully" });
 }

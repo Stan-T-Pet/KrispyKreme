@@ -18,7 +18,7 @@ const Manager = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await fetch("/api/orders");
+        const response = await fetch("/api/orders/fetchOrders"); // Updated path for orders API
         if (response.ok) {
           const data = await response.json();
           setOrders(data);
@@ -68,7 +68,7 @@ const Manager = () => {
                   </div>
                 ))}
               </TableCell>
-              <TableCell>${order.totalCost.toFixed(2)}</TableCell>
+              <TableCell>€{order.totalCost.toFixed(2)}</TableCell>
               <TableCell>{new Date(order.date).toLocaleString()}</TableCell>
             </TableRow>
           ))}
@@ -77,5 +77,4 @@ const Manager = () => {
     </Box>
   );
 };
-
 export default Manager;

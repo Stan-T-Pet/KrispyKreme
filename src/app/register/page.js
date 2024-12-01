@@ -2,102 +2,63 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { TextField, Button, Box, Typography, Alert, CircularProgress } from "@mui/material";
+import { Box, TextField, Button, Typography, Container } from "@mui/material";
 
-const Register = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: "customer",
-  });
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
-  const [loading, setLoading] = useState(false);
+export default function Register() {
   const router = useRouter();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(null);
-    setLoading(true);
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+  
+    const email = data.get("email");
+    const pass = data.get("pass");
+    const confirmEmail = data.get("confirmEmail");
+    const confirmPass = data.get("confirmPass");
+  
+    const response = await fetch(`/api/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, pass, confirmEmail, confirmPass }),
+    });
+  
+    if (response.ok) {
+      console.log("User registered successfully. Redirecting to login...");
+      router.push("/login");
+    } else if (response.status === 409) {
+      console.log("User already exists. Redirecting to login...");
+      router.push("/login");
+    } else {
+      console.error("Registration failed with status:", response.status);
+    }
+  };  
 
-    try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        setSuccess("Registration successful! Redirecting to login...");
-        setTimeout(() => router.push("/login"), 2000);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || "Registration failed. Please try again.");
-      }
-    } catch (err) {
-      setError("An error occurred. Please try again.");
-    } finally {
-      setLoading(false);
+    if (response.ok) {
+      console.log("User registered successfully. Redirecting to login...");
+      router.push("/login");
+    } else if (response.status === 409) {
+      console.log("User already exists. Redirecting to login...");
+      router.push("/login");
+    } else {
+      console.error("Registration failed with status:", response.status);
     }
   };
 
   return (
-    <Box sx={{ maxWidth: 400, mx: "auto", mt: 5 }}>
-      <Typography variant="h4" gutterBottom>
-        Register
-      </Typography>
-      {error && (
-        <Alert severity="error" sx={{ mt: 2 }}>
-          {error}
-        </Alert>
-      )}
-      {success && (
-        <Alert severity="success" sx={{ mt: 2 }}>
-          {success}
-        </Alert>
-      )}
-      <form onSubmit={handleSubmit}>
-        <TextField
-          label="Name"
-          type="text"
-          fullWidth
-          margin="normal"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          required
-        />
-        <TextField
-          label="Email"
-          type="email"
-          fullWidth
-          margin="normal"
-          value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          required
-        />
-        <TextField
-          label="Password"
-          type="password"
-          fullWidth
-          margin="normal"
-          value={formData.password}
-          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-          required
-        />
-        <Button
-          type="submit"
-          variant="contained"
-          fullWidth
-          disabled={loading}
-          sx={{ mt: 2 }}
-        >
-          {loading ? <CircularProgress size={24} /> : "Register"}
-        </Button>
-      </form>
-    </Box>
+    <Container maxWidth="sm">
+      <Box sx={{ mt: 5 }}>
+        <Typography variant="h4" gutterBottom>
+          Register
+        </Typography>
+        <Box component="form" onSubmit={handleSubmit} noValidate>
+          <TextField margin="normal" required fullWidth id="email" label="Email Address" name="email" />
+          <TextField margin="normal" required fullWidth id="confirmEmail" label="Confirm Email Address" name="confirmEmail" />
+          <TextField margin="normal" required fullWidth id="pass" label="Password" name="pass" type="password" />
+          <TextField margin="normal" required fullWidth id="confirmPass" label="Confirm Password" name="confirmPass" type="password" />
+          <Button type="submit" fullWidth variant="contained" sx={{ mt: 2 }}>
+            Register
+          </Button>
+        </Box>
+      </Box>
+    </Container>
   );
-};
-
-export default Register;

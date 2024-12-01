@@ -2,45 +2,26 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation"; // Updated for Next.js App Router
-import { TextField, Button, Box, Typography, Alert, CircularProgress } from "@mui/material";
+import { TextField, Button, Box, Typography, CircularProgress } from "@mui/material";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
-  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Basic validation
-    if (!formData.email || !formData.password) {
-      setError("Please fill in all fields.");
-      return;
-    }
-
     setLoading(true);
-    setError(null);
 
-    try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
 
-      if (response.ok) {
-        const { role } = await response.json();
-        router.push(role === "manager" ? "/manager" : "/customer");
-      } else {
-        const { message } = await response.json();
-        setError(message || "Invalid credentials.");
-      }
-    } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    const { role } = await response.json();
+    router.push(role === "manager" ? "/manager" : "/customer");
+    setLoading(false);
   };
 
   return (
@@ -56,6 +37,7 @@ const Login = () => {
           margin="normal"
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          required
         />
         <TextField
           label="Password"
@@ -64,12 +46,8 @@ const Login = () => {
           margin="normal"
           value={formData.password}
           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+          required
         />
-        {error && (
-          <Alert severity="error" sx={{ mt: 2 }}>
-            {error}
-          </Alert>
-        )}
         <Button
           type="submit"
           variant="contained"
