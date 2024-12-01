@@ -9,7 +9,7 @@ const Register = () => {
     name: "",
     email: "",
     password: "",
-    role: "customer", // Default role
+    role: "customer",
   });
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -31,7 +31,7 @@ const Register = () => {
 
       if (response.ok) {
         setSuccess("Registration successful! Redirecting to login...");
-        setTimeout(() => router.push("/login"), 2000); // Redirect after 2 seconds
+        setTimeout(() => router.push("/login"), 2000);
       } else {
         const errorData = await response.json();
         setError(errorData.message || "Registration failed. Please try again.");
