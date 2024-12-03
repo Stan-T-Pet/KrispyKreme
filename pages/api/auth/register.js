@@ -32,6 +32,7 @@ export default async function handler(req, res) {
     await db.collection("users").insertOne({
       email,
       password: hashedPassword,
+      role: "customer", // Default role
       createdAt: new Date(),
     });
 

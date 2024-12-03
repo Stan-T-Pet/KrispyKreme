@@ -1,18 +1,23 @@
-import { connectToDatabase } from "../../../utils/mongodb";
+import { connectToDatabase } from "../../../utils/db";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
-    return res.status(405).json({ message: "Method not allowed" });
+    return res.status(405).json({ message: "Method not allowed." });
   }
 
   try {
     const { db } = await connectToDatabase();
 
-    // Fetch all products from the "products" collection
-    const products = await db.collection("products").find({}).toArray();
+    // Fetch all products and sort by title
+    const products = await db
+      .collection("products")
+      .find({})
+      .sort({ title: 1 })
+      .toArray();
 
-    return res.status(200).json(products);
+    res.status(200).json(products);
   } catch (error) {
-    return res.status(500).json({ message: "Error fetching products", error });
+    console.error("Error fetching products:", error);
+    res.status(500).json({ message: "Error fetching products." });
   }
 }
