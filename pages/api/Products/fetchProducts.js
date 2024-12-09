@@ -7,17 +7,10 @@ export default async function handler(req, res) {
 
   try {
     const { db } = await connectToDatabase();
-
-    // Fetch all products and sort by title
-    const products = await db
-      .collection("products")
-      .find({})
-      .sort({ title: 1 })
-      .toArray();
-
+    const products = await db.collection("products").find().toArray();
     res.status(200).json(products);
   } catch (error) {
     console.error("Error fetching products:", error);
-    res.status(500).json({ message: "Error fetching products." });
+    res.status(500).json({ message: "Failed to fetch products." });
   }
 }

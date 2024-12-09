@@ -1,5 +1,5 @@
-import { hash } from "bcryptjs";
-import { connectToDatabase } from "../../../utils/db";
+import {hash } from "bcryptjs";
+import {connectToDatabase } from "../../../utils/db";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -39,6 +39,7 @@ export default async function handler(req, res) {
     return res.status(201).json({ message: "User registered successfully!" });
   } catch (error) {
     console.error("Registration error:", error);
+    return res.status(500).json({ message: "Internal server error." });
     return res.status(500).json({ message: "Internal server error." });
   }
 }
