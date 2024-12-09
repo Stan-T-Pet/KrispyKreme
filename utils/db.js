@@ -1,12 +1,9 @@
 import { MongoClient } from "mongodb";
-import dotenv from "dotenv";
-
-dotenv.config(); // Load environment variables from .env.local
 
 const uri = process.env.MONGODB_URI;
 
 if (!uri) {
-  throw new Error("Please define the MONGODB_URI environment variable in .env.local");
+  throw new Error("MONGODB_URI is not defined in .env.local");
 }
 
 let client;
@@ -25,7 +22,7 @@ if (process.env.NODE_ENV === "development") {
 
 export async function connectToDatabase() {
   if (!clientPromise) {
-    clientPromise = client.connect();
+    throw new Error("MongoClient is not connected.");
   }
   const connectedClient = await clientPromise;
   return { db: connectedClient.db(process.env.MONGODB_DB) };

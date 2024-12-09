@@ -15,6 +15,7 @@ export default function CustomerPage() {
           throw new Error(`Failed to fetch products: ${response.status}`);
         }
         const data = await response.json();
+        console.log("Fetched Products:", data); // Debugging log
         setProducts(data);
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -51,7 +52,7 @@ export default function CustomerPage() {
                 {product.description}
               </Typography>
               <Typography variant="body1" color="text.primary">
-                ${product.price}
+                €{parseFloat(product.price).toFixed(2)}
               </Typography>
             </CardContent>
           </Card>
