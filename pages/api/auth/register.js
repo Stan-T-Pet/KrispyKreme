@@ -1,25 +1,21 @@
-import {hash } from "bcryptjs";
-import {connectToDatabase } from "../../../utils/db";
+import { connectToDatabase } from "../../../utils/db";
+import { hash } from "bcryptjs";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method not allowed" });
+    return res.status(405).json({ message: "Method not allowed." });
   }
 
-  const { email, pass, confirmEmail, confirmPass } = req.body;
+  const { email, pass } = req.body;
 
-  if (!email || !pass || !confirmEmail || !confirmPass) {
-    return res.status(400).json({ message: "All fields are required." });
-  }
-
-  if (email !== confirmEmail || pass !== confirmPass) {
-    return res.status(400).json({ message: "Emails or passwords do not match." });
+  if (!email || !pass) {
+    return res.status(400).json({ message: "Email and password are required." });
   }
 
   try {
     const { db } = await connectToDatabase();
 
-    // Check if user already exists
+    // Check if the user already exists
     const existingUser = await db.collection("users").findOne({ email });
     if (existingUser) {
       return res.status(409).json({ message: "User already exists." });
@@ -28,7 +24,7 @@ export default async function handler(req, res) {
     // Hash the password
     const hashedPassword = await hash(pass, 10);
 
-    // Insert new user into the database
+    // Insert the new user
     await db.collection("users").insertOne({
       email,
       password: hashedPassword,
@@ -36,10 +32,9 @@ export default async function handler(req, res) {
       createdAt: new Date(),
     });
 
-    return res.status(201).json({ message: "User registered successfully!" });
+    res.status(201).json({ message: "User registered successfully." });
   } catch (error) {
     console.error("Registration error:", error);
-    return res.status(500).json({ message: "Internal server error." });
-    return res.status(500).json({ message: "Internal server error." });
+    res.status(500).json({ message: "Failed to register user." });
   }
 }

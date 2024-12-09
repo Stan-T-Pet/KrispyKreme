@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Box, TextField, Button, Typography, Container } from "@mui/material";
+import { Box, TextField, Button, Typography, Container, Alert } from "@mui/material";
 
 export default function Register() {
   const router = useRouter();
+  const [error, setError] = useState(null);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -16,20 +17,35 @@ export default function Register() {
     const confirmEmail = data.get("confirmEmail");
     const confirmPass = data.get("confirmPass");
 
-    const response = await fetch(`/api/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, pass, confirmEmail, confirmPass }),
-    });
+    // Basic validation
+    if (email !== confirmEmail) {
+      setError("Emails do not match.");
+      return;
+    }
 
-    if (response.ok) {
-      console.log("User registered successfully. Redirecting to login...");
-      router.push("/login");
-    } else if (response.status === 409) {
-      console.log("User already exists. Redirecting to login...");
-      router.push("/login");
-    } else {
-      console.error("Registration failed with status:", response.status);
+    if (pass !== confirmPass) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, pass }),
+      });
+
+      if (response.ok) {
+        console.log("User registered successfully. Redirecting to login...");
+        router.push("/login");
+      } else if (response.status === 409) {
+        setError("User already exists. Please log in.");
+      } else {
+        setError(`Registration failed. Status: ${response.status}`);
+      }
+    } catch (err) {
+      console.error("Error during registration:", err);
+      setError("An error occurred during registration. Please try again.");
     }
   };
 
@@ -39,6 +55,7 @@ export default function Register() {
         <Typography variant="h4" gutterBottom>
           Register
         </Typography>
+        {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
         <Box component="form" onSubmit={handleSubmit} noValidate>
           <TextField
             margin="normal"

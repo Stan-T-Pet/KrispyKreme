@@ -20,7 +20,7 @@ export default function Navbar() {
           <Button color="inherit" onClick={() => router.push("/")}>
             Home
           </Button>
-          <Button color="inherit" onClick={() => router.push("/cart")}>
+          <Button color="inherit" onClick={() => router.push("/viewcart")}>
             Cart
           </Button>
           <Button color="inherit" onClick={handleLogout}>

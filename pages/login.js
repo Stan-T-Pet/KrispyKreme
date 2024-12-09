@@ -1,65 +1,90 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation"; // Updated for Next.js App Router
-import { TextField, Button, Box, Typography, CircularProgress } from "@mui/material";
+import { useRouter } from "next/router";
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Container,
+  Stack,
+} from "@mui/material";
 
-const Login = () => {
-  const [formData, setFormData] = useState({ email: "", password: "" });
-  const [loading, setLoading] = useState(false);
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(null);
   const router = useRouter();
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
-
-    const { role } = await response.json();
-    router.push(role === "manager" ? "/manager" : "/customer");
-    setLoading(false);
+      if (response.ok) {
+        const data = await response.json();
+        router.push(data.redirectTo); // Redirect to the appropriate dashboard
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || "Login failed");
+      }
+    } catch (err) {
+      setError("An error occurred during login.");
+    }
   };
 
   return (
-    <Box sx={{ maxWidth: 400, mx: "auto", mt: 5 }}>
-      <Typography variant="h4" gutterBottom>
-        Login
-      </Typography>
-      <form onSubmit={handleSubmit}>
-        <TextField
-          label="Email"
-          type="email"
-          fullWidth
-          margin="normal"
-          value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          required
-        />
-        <TextField
-          label="Password"
-          type="password"
-          fullWidth
-          margin="normal"
-          value={formData.password}
-          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-          required
-        />
-        <Button
-          type="submit"
-          variant="contained"
-          fullWidth
-          sx={{ mt: 2 }}
-          disabled={loading}
-        >
-          {loading ? <CircularProgress size={24} /> : "Login"}
-        </Button>
-      </form>
-    </Box>
+    <Container maxWidth="sm">
+      <Box sx={{ mt: 5 }}>
+        <Typography variant="h4" gutterBottom>
+          Login
+        </Typography>
+        <Box component="form" onSubmit={handleLogin} noValidate>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="email"
+            label="Email Address"
+            name="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="password"
+            label="Password"
+            name="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          {error && (
+            <Typography color="error" sx={{ mt: 2 }}>
+              {error}
+            </Typography>
+          )}
+          <Stack spacing={2} direction="row" sx={{ mt: 3 }}>
+            <Button type="submit" fullWidth variant="contained">
+              Login
+            </Button>
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={() => router.push("/register")}
+            >
+              Register
+            </Button>
+          </Stack>
+        </Box>
+      </Box>
+    </Container>
   );
-};
-
-export default Login;
+}
