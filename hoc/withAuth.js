@@ -8,7 +8,6 @@ const withAuth = (WrappedComponent, allowedRoles = []) => {
     const router = useRouter();
 
     if (status === "loading") {
-      // Show a loading spinner while the session is being validated
       return (
         <Box
           sx={{
@@ -27,14 +26,10 @@ const withAuth = (WrappedComponent, allowedRoles = []) => {
       status === "unauthenticated" ||
       (allowedRoles.length > 0 && !allowedRoles.includes(session?.user?.role))
     ) {
-      // Redirect to login if not authenticated or unauthorized
-      if (typeof window !== "undefined") {
-        router.push("/login");
-      }
-      return null; // Prevent rendering of unauthorized content
+      router.push("/login");
+      return null;
     }
 
-    // Render the wrapped component if authenticated and authorized
     return <WrappedComponent {...props} />;
   };
 };

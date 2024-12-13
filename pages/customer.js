@@ -1,6 +1,5 @@
 import withAuth from "../hoc/withAuth";
 import Navbar from "../components/navbar";
-
 import {
   Alert,
   Grid,
@@ -27,6 +26,7 @@ function CustomerPage() {
         }
         const data = await response.json();
         setProducts(data);
+
         const initialQuantities = {};
         data.forEach((product) => {
           initialQuantities[product._id] = 1;
@@ -41,33 +41,32 @@ function CustomerPage() {
   }, []);
 
   const handleAddToCart = async (product) => {
-    const quantity = quantities[product._id];
+    const quantity = parseInt(quantities[product._id], 10);
     if (quantity <= 0) {
       alert("Quantity must be at least 1");
       return;
     }
-  
+
     try {
       const response = await fetch("/api/cart/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId: product._id, quantity }),
-        credentials: "include", // Ensure cookies are sent with the request
+        credentials: "include",
       });
-  
-      const result = await response.json();
-  
+
       if (response.ok) {
         alert(`${product.title} added to cart successfully!`);
       } else {
+        const result = await response.json();
         alert(`Failed to add to cart: ${result.message}`);
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
       alert("An error occurred while adding to cart.");
     }
-  };  
-  
+  };
+
   return (
     <>
       <Navbar />
@@ -94,10 +93,15 @@ function CustomerPage() {
                   type="number"
                   value={quantities[product._id] || 1}
                   onChange={(e) =>
-                    setQuantities({ ...quantities, [product._id]: e.target.value })
+                    setQuantities({
+                      ...quantities,
+                      [product._id]: Number(e.target.value),
+                    })
                   }
                 />
-                <Button onClick={() => handleAddToCart(product)}>Add to Cart</Button>
+                <Button onClick={() => handleAddToCart(product)}>
+                  Add to Cart
+                </Button>
               </CardContent>
             </Card>
           </Grid>

@@ -1,61 +1,103 @@
-"use client";
+import { useState, useEffect } from "react";
+import {
+  Container,
+  Typography,
+  Box,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Button,
+} from "@mui/material";
+import Navbar from "../components/navbar"; // Import Navbar
 
-import { useState } from "react";
-import { Box, Typography, Button, Alert, CircularProgress } from "@mui/material";
-
-const Checkout = () => {
-  const [confirmation, setConfirmation] = useState(null);
+export default function CheckoutPage() {
+  const [cartItems, setCartItems] = useState([]);
+  const [total, setTotal] = useState(0);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
 
-  const handleCheckout = async () => {
-    setLoading(true);
-    setConfirmation(null);
-    setError(null);
+  // Fetch cart items on page load
+  useEffect(() => {
+    const fetchCartItems = async () => {
+      try {
+        const response = await fetch("/api/cart/fetchCart");
+        if (!response.ok) {
+          throw new Error("Failed to fetch cart items.");
+        }
+        const data = await response.json();
+        setCartItems(data);
 
-    try {
-      const response = await fetch("/api/orders/placeOrder", { method: "POST" });
-      if (response.ok) {
-        setConfirmation("Order successfully placed! Check your email for confirmation.");
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || "There was an error placing the order. Please try again.");
+        // Calculate total price
+        const calculatedTotal = data.reduce(
+          (sum, item) => sum + item.quantity * item.price,
+          0
+        );
+        setTotal(calculatedTotal);
+      } catch (err) {
+        setError(err.message);
       }
-    } catch (networkError) {
-      setError("Network error: Unable to place the order. Please try again later.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchCartItems();
+  }, []);
 
   return (
-    <Box sx={{ mx: "auto", mt: 5, maxWidth: 800 }}>
-      <Typography variant="h4" gutterBottom>
-        Checkout
-      </Typography>
-      <Typography variant="body1" mt={2}>
-        Review your order and confirm the checkout process.
-      </Typography>
-      {confirmation && (
-        <Alert severity="success" sx={{ mt: 2 }} aria-live="polite">
-          {confirmation}
-        </Alert>
-      )}
-      {error && (
-        <Alert severity="error" sx={{ mt: 2 }} aria-live="assertive">
-          {error}
-        </Alert>
-      )}
-      <Button
-        variant="contained"
-        sx={{ mt: 2 }}
-        onClick={handleCheckout}
-        disabled={loading}
-      >
-        {loading ? <CircularProgress size={24} /> : "Confirm and Place Order"}
-      </Button>
-    </Box>
+    <>
+      <Navbar />
+      <Container sx={{ mt: 4 }}>
+        <Typography variant="h4" gutterBottom>
+          Checkout
+        </Typography>
+        {error && (
+          <Typography color="error" sx={{ mt: 2 }}>
+            {error}
+          </Typography>
+        )}
+        {cartItems.length === 0 ? (
+          <Typography>Your cart is empty.</Typography>
+        ) : (
+          <Box>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Product</TableCell>
+                  <TableCell>Quantity</TableCell>
+                  <TableCell>Price</TableCell>
+                  <TableCell>Total</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {cartItems.map((item) => (
+                  <TableRow key={item.productId}>
+                    <TableCell>{item.productName}</TableCell>
+                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell>€{item.price.toFixed(2)}</TableCell>
+                    <TableCell>
+                      €{(item.quantity * item.price).toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <Typography
+              variant="h5"
+              sx={{ mt: 3, textAlign: "right", fontWeight: "bold" }}
+            >
+              Total: €{total.toFixed(2)}
+            </Typography>
+            <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => alert("Checkout completed!")}
+              >
+                Confirm Checkout
+              </Button>
+            </Box>
+          </Box>
+        )}
+      </Container>
+    </>
   );
-};
-
-export default Checkout;
+}

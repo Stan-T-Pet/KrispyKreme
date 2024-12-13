@@ -3,7 +3,8 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { connectToDatabase } from "../../../utils/db";
 import { compare } from "bcryptjs";
 
-export default NextAuth({
+// Define the auth options
+export const authOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -32,8 +33,10 @@ export default NextAuth({
   ],
   callbacks: {
     async session({ session, token }) {
-      session.user.id = token.id;
-      session.user.role = token.role;
+      if (token) {
+        session.user.id = token.id;
+        session.user.role = token.role;
+      }
       return session;
     },
     async jwt({ token, user }) {
@@ -48,8 +51,7 @@ export default NextAuth({
   session: {
     strategy: "jwt",
   },
-  pages: {
-    signIn: "/login",
-    error: "/error",
-  },
-});
+};
+
+// Export authOptions for use with getServerSession
+export default NextAuth(authOptions);

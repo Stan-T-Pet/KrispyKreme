@@ -10,6 +10,7 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  Stack,
 } from "@mui/material";
 import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
@@ -38,10 +39,10 @@ export default function Navbar() {
           setError(err.message);
         }
       };
-  
+
       fetchCartItems();
     }
-  }, [cartOpen]);  
+  }, [cartOpen]);
 
   const handleLogout = async () => {
     try {
@@ -50,6 +51,26 @@ export default function Navbar() {
     } catch (error) {
       console.error("Error during logout:", error);
     }
+  };
+
+  const handleClearCart = async () => {
+    try {
+      const response = await fetch("/api/cart/clearCart", { method: "DELETE" });
+      if (response.ok) {
+        setCartItems([]);
+        alert("Cart cleared successfully!");
+      } else {
+        alert("Failed to clear the cart.");
+      }
+    } catch (error) {
+      console.error("Error clearing cart:", error);
+      alert("An error occurred while clearing the cart.");
+    }
+  };
+
+  const handleCheckout = () => {
+    // Navigate to the checkout page
+    router.push("/checkout");
   };
 
   return (
@@ -87,26 +108,44 @@ export default function Navbar() {
           {cartItems.length === 0 ? (
             <Typography>Your cart is empty.</Typography>
           ) : (
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Product</TableCell>
-                  <TableCell>Quantity</TableCell>
-                  <TableCell>Price</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {cartItems.map((item) => (
-                  <TableRow key={item.productId}>
-                    <TableCell>{item.productName}</TableCell>
-                    <TableCell>{item.quantity}</TableCell>
-                    <TableCell>
-                      €{(item.price * item.quantity).toFixed(2)}
-                    </TableCell>
+            <>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Product</TableCell>
+                    <TableCell>Quantity</TableCell>
+                    <TableCell>Price</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHead>
+                <TableBody>
+                  {cartItems.map((item) => (
+                    <TableRow key={item.productId}>
+                      <TableCell>{item.productName}</TableCell>
+                      <TableCell>{item.quantity}</TableCell>
+                      <TableCell>
+                        €{(item.price * item.quantity).toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleCheckout}
+                >
+                  Checkout
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  onClick={handleClearCart}
+                >
+                  Clear Cart
+                </Button>
+              </Stack>
+            </>
           )}
         </Box>
       </Drawer>
