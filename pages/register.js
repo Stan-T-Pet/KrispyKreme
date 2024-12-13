@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/router";
-import { Box, TextField, Button, Typography, Container, Alert } from "@mui/material";
+import { Box, TextField, Button, Typography, Container, Alert, MenuItem } from "@mui/material";
 
 export default function Register() {
   const router = useRouter();
@@ -10,9 +10,25 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("customer");
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleRegister = async (event) => {
     event.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    // Basic validation
+    if (!email || !password) {
+      setError("Email and password are required.");
+      setLoading(false);
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
@@ -21,13 +37,15 @@ export default function Register() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
+        const data = await response.json().catch(() => ({ message: "Unexpected error occurred." }));
         throw new Error(data.message || "Failed to register.");
       }
 
       router.push("/login");
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -59,13 +77,24 @@ export default function Register() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          <TextField
+            select
+            margin="normal"
+            fullWidth
+            label="Role"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+          >
+            <MenuItem value="customer">Customer</MenuItem>
+            <MenuItem value="manager">Manager</MenuItem>
+          </TextField>
           {error && (
             <Alert severity="error" sx={{ mt: 2 }}>
               {error}
             </Alert>
           )}
-          <Button type="submit" fullWidth variant="contained" sx={{ mt: 2 }}>
-            Register
+          <Button type="submit" fullWidth variant="contained" sx={{ mt: 2 }} disabled={loading}>
+            {loading ? "Registering..." : "Register"}
           </Button>
         </Box>
       </Box>
