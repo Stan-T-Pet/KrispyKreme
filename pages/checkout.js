@@ -10,7 +10,7 @@ import {
   TableRow,
   Button,
 } from "@mui/material";
-import Navbar from "../components/navbar"; // Import Navbar
+import Navbar from "../components/navbar";
 
 export default function CheckoutPage() {
   const [cartItems, setCartItems] = useState([]);
@@ -41,6 +41,39 @@ export default function CheckoutPage() {
 
     fetchCartItems();
   }, []);
+
+  const handleCheckout = async () => {
+    try {
+      const response = await fetch("/api/orders/placeOrder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerName: "Customer Name", // Replace with actual customer name if available
+          products: cartItems.map(({ productId, productName, quantity, price }) => ({
+            productId,
+            productName,
+            quantity,
+            price,
+          })),
+          totalCost: total,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to place order.");
+      }
+
+      const result = await response.json();
+      alert(`Order placed successfully! Order ID: ${result.orderId}`);
+
+      // Clear cart after successful checkout
+      await fetch("/api/cart/clearCart", { method: "POST" });
+      setCartItems([]);
+      setTotal(0);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
   return (
     <>
@@ -90,7 +123,7 @@ export default function CheckoutPage() {
               <Button
                 variant="contained"
                 color="primary"
-                onClick={() => alert("Checkout completed!")}
+                onClick={handleCheckout}
               >
                 Confirm Checkout
               </Button>

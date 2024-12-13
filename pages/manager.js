@@ -9,11 +9,15 @@ import {
   TableHead,
   TableRow,
   Alert,
+  Divider,
+  Chip,
 } from "@mui/material";
 import { useState, useEffect } from "react";
 
 function ManagerPage() {
   const [orders, setOrders] = useState([]);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [totalOrders, setTotalOrders] = useState(0);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -25,6 +29,12 @@ function ManagerPage() {
         }
         const data = await response.json();
         setOrders(data);
+
+        // Calculate total revenue and total orders
+        const revenue = data.reduce((sum, order) => sum + order.totalCost, 0);
+        const ordersCount = data.length;
+        setTotalRevenue(revenue);
+        setTotalOrders(ordersCount);
       } catch (err) {
         setError(err.message);
       }
@@ -45,6 +55,20 @@ function ManagerPage() {
         <Typography variant="h4" gutterBottom>
           Manager Dashboard
         </Typography>
+
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+          <Typography variant="h6">
+            Total Orders: <strong>{totalOrders}</strong>
+          </Typography>
+          <Typography variant="h6">
+            Total Revenue: <strong>€{totalRevenue.toFixed(2)}</strong>
+          </Typography>
+        </Box>
+
+        <Divider>
+          <Chip label="Order Details" />
+        </Divider>
+
         <Table sx={{ mt: 3 }}>
           <TableHead>
             <TableRow>
@@ -57,13 +81,13 @@ function ManagerPage() {
           </TableHead>
           <TableBody>
             {orders.map((order) => (
-              <TableRow key={order.id}>
-                <TableCell>{order.id}</TableCell>
+              <TableRow key={order._id}>
+                <TableCell>{order._id}</TableCell> {/* Use _id for MongoDB */}
                 <TableCell>{order.customerName}</TableCell>
                 <TableCell>
-                  {order.products.map((product) => (
-                    <div key={product.id}>
-                      {product.name} (x{product.quantity})
+                  {order.products.map((product, index) => (
+                    <div key={index}>
+                      {product.productName} (x{product.quantity})
                     </div>
                   ))}
                 </TableCell>

@@ -9,6 +9,7 @@ import {
   Typography,
   Button,
   TextField,
+  Box,
 } from "@mui/material";
 import { useState, useEffect } from "react";
 
@@ -16,8 +17,10 @@ function CustomerPage() {
   const [products, setProducts] = useState([]);
   const [quantities, setQuantities] = useState({});
   const [error, setError] = useState(null);
+  const [weather, setWeather] = useState(null);
 
   useEffect(() => {
+    // Fetch products
     const fetchProducts = async () => {
       try {
         const response = await fetch("/api/products/fetchProducts");
@@ -27,6 +30,7 @@ function CustomerPage() {
         const data = await response.json();
         setProducts(data);
 
+        // Initialize quantities for each product
         const initialQuantities = {};
         data.forEach((product) => {
           initialQuantities[product._id] = 1;
@@ -38,10 +42,27 @@ function CustomerPage() {
     };
 
     fetchProducts();
+
+    // Fetch weather data
+    const fetchWeather = async () => {
+      try {
+        const response = await fetch("/api/getWeather");
+        if (!response.ok) {
+          throw new Error("Failed to fetch weather data.");
+        }
+        const data = await response.json();
+        setWeather(data.temp);
+      } catch (err) {
+        console.error("Error fetching weather:", err.message);
+        setWeather("N/A");
+      }
+    };
+
+    fetchWeather();
   }, []);
 
   const handleAddToCart = async (product) => {
-    const quantity = parseInt(quantities[product._id], 10);
+    const quantity = quantities[product._id];
     if (quantity <= 0) {
       alert("Quantity must be at least 1");
       return;
@@ -55,10 +76,11 @@ function CustomerPage() {
         credentials: "include",
       });
 
+      const result = await response.json();
+
       if (response.ok) {
         alert(`${product.title} added to cart successfully!`);
       } else {
-        const result = await response.json();
         alert(`Failed to add to cart: ${result.message}`);
       }
     } catch (error) {
@@ -70,6 +92,13 @@ function CustomerPage() {
   return (
     <>
       <Navbar />
+      {weather !== null && (
+        <Box sx={{ p: 2, backgroundColor: "#e3f2fd", textAlign: "center" }}>
+          <Typography variant="h6">
+            Current Temperature in Dublin: {weather}°C
+          </Typography>
+        </Box>
+      )}
       {error && (
         <Alert severity="error" sx={{ mt: 2 }}>
           {error}
