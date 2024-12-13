@@ -1,6 +1,5 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import withAuth from "../hoc/withAuth";
+import Navbar from "../components/navbar";
 import {
   Box,
   Typography,
@@ -9,73 +8,74 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  Alert,
 } from "@mui/material";
+import { useState, useEffect } from "react";
 
-const Manager = () => {
-  const [orders, setOrders] = useState([]);
+function ViewCartPage() {
+  const [cartItems, setCartItems] = useState([]);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchOrders = async () => {
+    const fetchCartItems = async () => {
       try {
-        const response = await fetch("/api/orders");
-        if (response.ok) {
-          const data = await response.json();
-          setOrders(data);
-        } else {
-          setError("Failed to fetch orders.");
+        const response = await fetch("/api/cart/fetchCart");
+        if (!response.ok) {
+          throw new Error("Failed to fetch cart items.");
         }
+        const data = await response.json();
+        console.log("Fetched Cart Items:", data); // Log cart items
+        setCartItems(data);
       } catch (err) {
-        setError("An error occurred while fetching orders.");
+        console.error("Error fetching cart items:", err.message);
+        setError(err.message);
       }
     };
 
-    fetchOrders();
+    fetchCartItems();
   }, []);
 
   return (
-    <Box sx={{ mx: "auto", mt: 5, maxWidth: 1000 }}>
-      <Typography variant="h4" gutterBottom>
-        Manager Dashboard
-      </Typography>
-      <Typography variant="body1" mt={2}>
-        Here you can view all orders placed by customers.
-      </Typography>
+    <>
+      <Navbar />
       {error && (
-        <Typography color="error" sx={{ mt: 2 }}>
+        <Alert severity="error" sx={{ mt: 2 }}>
           {error}
-        </Typography>
+        </Alert>
       )}
-      <Table sx={{ mt: 3 }}>
-        <TableHead>
-          <TableRow>
-            <TableCell>Order ID</TableCell>
-            <TableCell>Customer</TableCell>
-            <TableCell>Products</TableCell>
-            <TableCell>Total Cost</TableCell>
-            <TableCell>Order Date</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {orders.map((order) => (
-            <TableRow key={order.id}>
-              <TableCell>{order.id}</TableCell>
-              <TableCell>{order.customerName}</TableCell>
-              <TableCell>
-                {order.products.map((product) => (
-                  <div key={product.id}>
-                    {product.name} (x{product.quantity})
-                  </div>
-                ))}
-              </TableCell>
-              <TableCell>${order.totalCost.toFixed(2)}</TableCell>
-              <TableCell>{new Date(order.date).toLocaleString()}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </Box>
+      <Box sx={{ mx: "auto", mt: 5, maxWidth: 800 }}>
+        <Typography variant="h4" gutterBottom>
+          Your Cart
+        </Typography>
+        {cartItems.length === 0 ? (
+          <Typography variant="h6" color="text.secondary">
+            Your cart is empty.
+          </Typography>
+        ) : (
+          <Table sx={{ mt: 3 }}>
+            <TableHead>
+              <TableRow>
+                <TableCell>Product</TableCell>
+                <TableCell>Quantity</TableCell>
+                <TableCell>Price</TableCell>
+                <TableCell>Total</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {cartItems.map((item) => (
+                <TableRow key={item.productId}>
+                  <TableCell>{item.productName}</TableCell>
+                  <TableCell>{item.quantity}</TableCell>
+                  <TableCell>€{item.price.toFixed(2)}</TableCell>
+                  <TableCell>
+                    €{(item.price * item.quantity).toFixed(2)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </Box>
+    </>
   );
-};
-
-export default Manager;
+}

@@ -1,7 +1,8 @@
-"use client";
+import withAuth from "../hoc/withAuth";
+import Navbar from "../components/navbar";
 
-import { useState, useEffect } from "react";
 import {
+  Alert,
   Grid,
   Card,
   CardContent,
@@ -10,44 +11,34 @@ import {
   Button,
   TextField,
 } from "@mui/material";
-import Navbar from "../components/Navbar"; // Import Navbar
+import { useState, useEffect } from "react";
 
-export default function CustomerPage() {
+function CustomerPage() {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [quantities, setQuantities] = useState({});
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const response = await fetch("/api/products/fetchProducts");
         if (!response.ok) {
-          throw new Error(`Failed to fetch products: ${response.status}`);
+          throw new Error("Failed to fetch products.");
         }
         const data = await response.json();
         setProducts(data);
-
         const initialQuantities = {};
         data.forEach((product) => {
           initialQuantities[product._id] = 1;
         });
         setQuantities(initialQuantities);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      } finally {
-        setLoading(false);
+      } catch (err) {
+        setError(err.message);
       }
     };
 
     fetchProducts();
   }, []);
-
-  const handleQuantityChange = (productId, value) => {
-    setQuantities((prevQuantities) => ({
-      ...prevQuantities,
-      [productId]: value,
-    }));
-  };
 
   const handleAddToCart = async (product) => {
     const quantity = quantities[product._id];
@@ -55,46 +46,36 @@ export default function CustomerPage() {
       alert("Quantity must be at least 1");
       return;
     }
-
+  
     try {
       const response = await fetch("/api/cart/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId: product._id, quantity }),
+        credentials: "include", // Ensure cookies are sent with the request
       });
-
+  
+      const result = await response.json();
+  
       if (response.ok) {
         alert(`${product.title} added to cart successfully!`);
       } else {
-        alert("Failed to add to cart");
+        alert(`Failed to add to cart: ${result.message}`);
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
       alert("An error occurred while adding to cart.");
     }
-  };
-
-  if (loading) {
-    return (
-      <>
-        <Navbar />
-        <Typography variant="h5">Loading products...</Typography>
-      </>
-    );
-  }
-
-  if (products.length === 0) {
-    return (
-      <>
-        <Navbar />
-        <Typography variant="h5">No products available.</Typography>
-      </>
-    );
-  }
-
+  };  
+  
   return (
     <>
       <Navbar />
+      {error && (
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {error}
+        </Alert>
+      )}
       <Grid container spacing={3}>
         {products.map((product) => (
           <Grid item xs={12} sm={6} md={4} key={product._id}>
@@ -102,34 +83,21 @@ export default function CustomerPage() {
               <CardMedia
                 component="img"
                 height="140"
-                image={product.image || "/placeholder.png"}
+                image={product.image}
                 alt={product.title}
               />
               <CardContent>
                 <Typography variant="h6">{product.title}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {product.description}
-                </Typography>
-                <Typography variant="body1" color="text.primary">
-                  €{parseFloat(product.price).toFixed(2)}
-                </Typography>
+                <Typography>{product.description}</Typography>
                 <TextField
-                  type="number"
                   label="Quantity"
+                  type="number"
                   value={quantities[product._id] || 1}
                   onChange={(e) =>
-                    handleQuantityChange(product._id, Number(e.target.value))
+                    setQuantities({ ...quantities, [product._id]: e.target.value })
                   }
-                  inputProps={{ min: 1 }}
-                  sx={{ mt: 2, mb: 2, width: "100%" }}
                 />
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => handleAddToCart(product)}
-                >
-                  Add to Cart
-                </Button>
+                <Button onClick={() => handleAddToCart(product)}>Add to Cart</Button>
               </CardContent>
             </Card>
           </Grid>
@@ -138,3 +106,5 @@ export default function CustomerPage() {
     </>
   );
 }
+
+export default withAuth(CustomerPage, ["customer"]);

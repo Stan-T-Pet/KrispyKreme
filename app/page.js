@@ -7,7 +7,7 @@ export default function HomePage() {
     { name: 'Customer Page', path: '/customer' },
     { name: 'Register', path: '/register' },
     { name: 'Login', path: '/login' },
-    { name: 'View Cart', path: '/viewcart' }, // Updated path
+    { name: 'View Cart', path: '/viewcart' },
     { name: 'Checkout', path: '/checkout' },
   ];
 

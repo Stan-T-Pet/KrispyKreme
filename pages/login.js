@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/router";
 import {
   Box,
@@ -9,38 +10,55 @@ import {
   Typography,
   Container,
   Stack,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+    setError(null);
+    setLoading(true);
 
-      if (response.ok) {
-        const data = await response.json();
-        router.push(data.redirectTo); // Redirect to the appropriate dashboard
+    // Attempt login using next-auth credentials provider
+    const result = await signIn("credentials", {
+      redirect: false,
+      email,
+      password,
+    });
+
+    setLoading(false);
+
+    if (!result.error) {
+      const { user } = await (await fetch("/api/auth/session")).json(); 
+      if (user?.role === "manager") {
+        router.push("/manager");
+      } else if (user?.role === "customer") {
+        router.push("/customer");
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || "Login failed");
+        setError("Unauthorized role. Contact support.");
       }
-    } catch (err) {
-      setError("An error occurred during login.");
+    } else {
+      setError("Invalid credentials. Please try again.");
     }
   };
 
   return (
     <Container maxWidth="sm">
-      <Box sx={{ mt: 5 }}>
+      <Box
+        sx={{
+          mt: 5,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
         <Typography variant="h4" gutterBottom>
           Login
         </Typography>
@@ -67,13 +85,19 @@ export default function Login() {
             onChange={(e) => setPassword(e.target.value)}
           />
           {error && (
-            <Typography color="error" sx={{ mt: 2 }}>
+            <Alert severity="error" sx={{ mt: 2 }}>
               {error}
-            </Typography>
+            </Alert>
           )}
           <Stack spacing={2} direction="row" sx={{ mt: 3 }}>
-            <Button type="submit" fullWidth variant="contained">
-              Login
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              disabled={loading}
+              startIcon={loading ? <CircularProgress size={16} /> : null}
+            >
+              {loading ? "Logging in..." : "Login"}
             </Button>
             <Button
               fullWidth

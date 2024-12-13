@@ -1,51 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import { Box, TextField, Button, Typography, Container, Alert } from "@mui/material";
 
 export default function Register() {
   const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("customer");
   const [error, setError] = useState(null);
 
-  const handleSubmit = async (event) => {
+  const handleRegister = async (event) => {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
-
-    const email = data.get("email");
-    const pass = data.get("pass");
-    const confirmEmail = data.get("confirmEmail");
-    const confirmPass = data.get("confirmPass");
-
-    // Basic validation
-    if (email !== confirmEmail) {
-      setError("Emails do not match.");
-      return;
-    }
-
-    if (pass !== confirmPass) {
-      setError("Passwords do not match.");
-      return;
-    }
-
     try {
-      const response = await fetch(`/api/auth/register`, {
+      const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, pass }),
+        body: JSON.stringify({ email, password, role }),
       });
 
-      if (response.ok) {
-        console.log("User registered successfully. Redirecting to login...");
-        router.push("/login");
-      } else if (response.status === 409) {
-        setError("User already exists. Please log in.");
-      } else {
-        setError(`Registration failed. Status: ${response.status}`);
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Failed to register.");
       }
+
+      router.push("/login");
     } catch (err) {
-      console.error("Error during registration:", err);
-      setError("An error occurred during registration. Please try again.");
+      setError(err.message);
     }
   };
 
@@ -55,8 +37,7 @@ export default function Register() {
         <Typography variant="h4" gutterBottom>
           Register
         </Typography>
-        {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
-        <Box component="form" onSubmit={handleSubmit} noValidate>
+        <Box component="form" onSubmit={handleRegister} noValidate>
           <TextField
             margin="normal"
             required
@@ -64,33 +45,25 @@ export default function Register() {
             id="email"
             label="Email Address"
             name="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
           <TextField
             margin="normal"
             required
             fullWidth
-            id="confirmEmail"
-            label="Confirm Email Address"
-            name="confirmEmail"
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="pass"
+            id="password"
             label="Password"
-            name="pass"
+            name="password"
             type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="confirmPass"
-            label="Confirm Password"
-            name="confirmPass"
-            type="password"
-          />
+          {error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
           <Button type="submit" fullWidth variant="contained" sx={{ mt: 2 }}>
             Register
           </Button>

@@ -6,35 +6,26 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: "Method not allowed." });
   }
 
-  const { email, pass } = req.body;
+  const { email, password, role } = req.body;
 
-  if (!email || !pass) {
-    return res.status(400).json({ message: "Email and password are required." });
+  if (!email || !password || !role) {
+    return res.status(400).json({ message: "Missing required fields." });
   }
 
   try {
     const { db } = await connectToDatabase();
-
-    // Check if the user already exists
     const existingUser = await db.collection("users").findOne({ email });
+
     if (existingUser) {
       return res.status(409).json({ message: "User already exists." });
     }
 
-    // Hash the password
-    const hashedPassword = await hash(pass, 10);
-
-    // Insert the new user
-    await db.collection("users").insertOne({
-      email,
-      password: hashedPassword,
-      role: "customer", // Default role
-      createdAt: new Date(),
-    });
+    const hashedPassword = await hash(password, 10);
+    await db.collection("users").insertOne({ email, password: hashedPassword, role });
 
     res.status(201).json({ message: "User registered successfully." });
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error("Error during registration:", error.message); // Log detailed error
     res.status(500).json({ message: "Failed to register user." });
   }
 }

@@ -1,6 +1,5 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import withAuth from "../hoc/withAuth";
+import Navbar from "../components/navbar";
 import {
   Box,
   Typography,
@@ -9,25 +8,25 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  Alert,
 } from "@mui/material";
-import Navbar from "../components/Navbar"; // Import Navbar
+import { useState, useEffect } from "react";
 
-const Manager = () => {
+function ManagerPage() {
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await fetch("/api/orders");
-        if (response.ok) {
-          const data = await response.json();
-          setOrders(data);
-        } else {
-          setError("Failed to fetch orders.");
+        const response = await fetch("/api/orders/fetchOrders");
+        if (!response.ok) {
+          throw new Error("Failed to fetch orders.");
         }
+        const data = await response.json();
+        setOrders(data);
       } catch (err) {
-        setError("An error occurred while fetching orders.");
+        setError(err.message);
       }
     };
 
@@ -37,18 +36,15 @@ const Manager = () => {
   return (
     <>
       <Navbar />
+      {error && (
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {error}
+        </Alert>
+      )}
       <Box sx={{ mx: "auto", mt: 5, maxWidth: 1000 }}>
         <Typography variant="h4" gutterBottom>
           Manager Dashboard
         </Typography>
-        <Typography variant="body1" mt={2}>
-          Here you can view all orders placed by customers.
-        </Typography>
-        {error && (
-          <Typography color="error" sx={{ mt: 2 }}>
-            {error}
-          </Typography>
-        )}
         <Table sx={{ mt: 3 }}>
           <TableHead>
             <TableRow>
@@ -71,7 +67,7 @@ const Manager = () => {
                     </div>
                   ))}
                 </TableCell>
-                <TableCell>${order.totalCost.toFixed(2)}</TableCell>
+                <TableCell>€{order.totalCost.toFixed(2)}</TableCell>
                 <TableCell>{new Date(order.date).toLocaleString()}</TableCell>
               </TableRow>
             ))}
@@ -80,6 +76,6 @@ const Manager = () => {
       </Box>
     </>
   );
-};
+}
 
-export default Manager;
+export default withAuth(ManagerPage, ["manager"]);
