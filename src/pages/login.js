@@ -24,9 +24,23 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError(null);
+
+    // Validate inputs
+    if (!email || !password) {
+      setError("Both email and password are required.");
+      return;
+    }
+    if (email.length > 50) {
+      setError("Email must be less than 50 characters.");
+      return;
+    }
+    if (password.length > 50) {
+      setError("Password must be less than 50 characters.");
+      return;
+    }
+
     setLoading(true);
 
-    // Attempt login using next-auth credentials provider
     const result = await signIn("credentials", {
       redirect: false,
       email,
@@ -36,7 +50,7 @@ export default function Login() {
     setLoading(false);
 
     if (!result.error) {
-      const { user } = await (await fetch("/api/auth/session")).json(); 
+      const { user } = await (await fetch("/api/auth/session")).json();
       if (user?.role === "manager") {
         router.push("/manager");
       } else if (user?.role === "customer") {
@@ -72,6 +86,7 @@ export default function Login() {
             name="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            inputProps={{ maxLength: 50 }}
           />
           <TextField
             margin="normal"
@@ -83,6 +98,7 @@ export default function Login() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            inputProps={{ maxLength: 50 }}
           />
           {error && (
             <Alert severity="error" sx={{ mt: 2 }}>

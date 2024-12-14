@@ -9,9 +9,15 @@ export default async function handler(req, res) {
 
   const { email, password, role } = req.body;
 
-  // Validate request body
+  // Validate input
   if (!email || !password || !role) {
     return res.status(400).json({ message: "Missing required fields." });
+  }
+  if (email.length > 50) {
+    return res.status(400).json({ message: "Email must be less than 50 characters." });
+  }
+  if (password.length > 50) {
+    return res.status(400).json({ message: "Password must be less than 50 characters." });
   }
   if (password.length < 6) {
     return res.status(400).json({ message: "Password must be at least 6 characters long." });
@@ -26,10 +32,10 @@ export default async function handler(req, res) {
       return res.status(409).json({ message: "User already exists." });
     }
 
-    // Hash the password
+    // Hash password
     const hashedPassword = await hash(password, 10);
 
-    // Insert the new user into the database
+    // Insert new user into the database, with hashed pass
     const newUser = {
       email,
       password: hashedPassword,
@@ -41,10 +47,7 @@ export default async function handler(req, res) {
 
     res.status(201).json({ message: "User registered successfully." });
   } catch (error) {
-    // Log errors for debugging
     console.error("Error during registration:", error);
-
-    // Return a generic error response to avoid exposing sensitive details
     res.status(500).json({ message: "Internal server error." });
   }
 }
