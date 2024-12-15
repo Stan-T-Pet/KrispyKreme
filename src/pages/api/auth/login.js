@@ -1,5 +1,6 @@
 import { connectToDatabase } from "../../../utils/db";
 import { compare } from "bcryptjs";
+import validator from "validator";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -8,37 +9,29 @@ export default async function handler(req, res) {
 
   const { email, password } = req.body;
 
-  // Validate input
-  if (!email || !password || typeof email !== "string" || typeof password !== "string") {
-    return res.status(400).json({ message: "Email and password are required." }); 
-  }else{
-    if (email.length > 50 || password.length > 50) {
-      return res.status(400).json({ message: "Email/Password must be less than 50 characters." });
-    }
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required." });
+  }
+
+  const sanitizedEmail = validator.escape(email.trim());
+  const sanitizedPassword = validator.escape(password.trim());
+
+  if (!validator.isEmail(sanitizedEmail)) {
+    return res.status(400).json({ message: "Invalid email format." });
   }
 
   try {
     const { db } = await connectToDatabase();
+    const user = await db.collection("users").findOne({ email: sanitizedEmail });
 
-    // Find the user by email
-    const user = await db.collection("users").findOne({ email });
-
-    if (!user) {
+    if (!user || !(await compare(sanitizedPassword, user.password))) {
       return res.status(401).json({ message: "Invalid credentials." });
     }
 
-    // Compare the entered password with the hashed password in the database
-    const isPasswordValid = await compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid credentials." });
-    }
-
-    // Redirect based on user role
     const redirectPath = user.role === "manager" ? "/manager" : "/customer";
-
-    return res.status(200).json({ redirectTo: redirectPath });
+    res.status(200).json({ redirectTo: redirectPath });
   } catch (error) {
     console.error("Internal login error:", error.message);
-    return res.status(500).json({ message: "Internal server error." });
+    res.status(500).json({ message: "Internal server error." });
   }
 }

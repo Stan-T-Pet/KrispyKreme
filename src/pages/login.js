@@ -13,6 +13,7 @@ import {
   Alert,
   CircularProgress,
 } from "@mui/material";
+import { validateEmail, validatePassword } from "../components/formValidator";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -25,41 +26,40 @@ export default function Login() {
     e.preventDefault();
     setError(null);
 
-    // Validate inputs
-    if (!email || !password) {
-      setError("Both email and password are required.");
-      return;
-    }
-    if (email.length > 50) {
-      setError("Email must be less than 50 characters.");
-      return;
-    }
-    if (password.length > 50) {
-      setError("Password must be less than 50 characters.");
+    // Validate inputs using formValidator.js
+    const emailError = validateEmail(email);
+    const passwordError = validatePassword(password);
+
+    if (emailError || passwordError) {
+      setError(emailError || passwordError);
       return;
     }
 
     setLoading(true);
 
-    const result = await signIn("credentials", {
-      redirect: false,
-      email,
-      password,
-    });
+    try {
+      const result = await signIn("credentials", {
+        redirect: false,
+        email,
+        password,
+      });
 
-    setLoading(false);
-
-    if (!result.error) {
-      const { user } = await (await fetch("/api/auth/session")).json();
-      if (user?.role === "manager") {
-        router.push("/manager");
-      } else if (user?.role === "customer") {
-        router.push("/customer");
+      if (!result.error) {
+        const { user } = await (await fetch("/api/auth/session")).json();
+        if (user?.role === "manager") {
+          router.push("/manager");
+        } else if (user?.role === "customer") {
+          router.push("/customer");
+        } else {
+          setError("Unauthorized role. Contact support.");
+        }
       } else {
-        setError("Unauthorized role. Contact support.");
+        setError("Invalid credentials. Please try again.");
       }
-    } else {
-      setError("Invalid credentials. Please try again.");
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again later.");
+    } finally {
+      setLoading(false);
     }
   };
 

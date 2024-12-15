@@ -22,12 +22,13 @@ export default function Register() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
+
   const handleRegister = async (event) => {
     event.preventDefault();
     setLoading(true);
     setError(null);
 
-    // Checking input not null/empt
+    // Checking input not null/empty
     if (!email || !confirmEmail || !password || !confirmPassword) {
       setError("All fields are required.");
       setLoading(false);

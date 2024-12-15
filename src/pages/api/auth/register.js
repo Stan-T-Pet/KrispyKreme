@@ -1,5 +1,6 @@
 import { connectToDatabase } from "../../../utils/db";
 import { hash } from "bcryptjs";
+import validator from "validator";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -9,41 +10,36 @@ export default async function handler(req, res) {
 
   const { email, password, role } = req.body;
 
-  // Validate input
+  // Validate and sanitize inputs
   if (!email || !password || !role) {
     return res.status(400).json({ message: "Missing required fields." });
   }
-  if (email.length > 50) {
-    return res.status(400).json({ message: "Email must be less than 50 characters." });
+  const sanitizedEmail = validator.escape(email.trim());
+  const sanitizedPassword = validator.escape(password.trim());
+  const sanitizedRole = validator.escape(role.trim());
+
+  if (!validator.isEmail(sanitizedEmail)) {
+    return res.status(400).json({ message: "Invalid email format." });
   }
-  if (password.length > 50) {
-    return res.status(400).json({ message: "Password must be less than 50 characters." });
-  }
-  if (password.length < 6) {
-    return res.status(400).json({ message: "Password must be at least 6 characters long." });
+  if (sanitizedPassword.length < 6 || sanitizedPassword.length > 50) {
+    return res.status(400).json({ message: "Password must be between 6 and 50 characters." });
   }
 
   try {
     const { db } = await connectToDatabase();
 
-    // Check if the user already exists
-    const existingUser = await db.collection("users").findOne({ email });
+    const existingUser = await db.collection("users").findOne({ email: sanitizedEmail });
     if (existingUser) {
       return res.status(409).json({ message: "User already exists." });
     }
 
-    // Hash password
-    const hashedPassword = await hash(password, 10);
-
-    // Insert new user into the database, with hashed pass
-    const newUser = {
-      email,
+    const hashedPassword = await hash(sanitizedPassword, 10);
+    await db.collection("users").insertOne({
+      email: sanitizedEmail,
       password: hashedPassword,
-      role,
+      role: sanitizedRole,
       createdAt: new Date(),
-    };
-
-    await db.collection("users").insertOne(newUser);
+    });
 
     res.status(201).json({ message: "User registered successfully." });
   } catch (error) {
